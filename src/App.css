@@ -1,0 +1,55 @@
+/* App.css */
+
+.app {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+  }
+  
+  .error-message {
+    color: red;
+    text-align: center;
+  }
+  
+  .skeleton-container {
+    margin: 20px 0;
+  }
+  
+  .headline-list {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .headline-item {
+    margin-bottom: 20px;
+  }
+  
+  .headline-card {
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 5px;
+  }
+  
+  .source-icon {
+    font-weight: bold;
+    margin-right: 10px;
+  }
+  
+  .source-icon.fox {
+    color: #e2231a;
+  }
+  
+  .source-icon.cnn {
+    color: #cc0000;
+  }
+  
+  .original-headline {
+    font-size: 16px;
+    color: #555;
+  }
+  
+  .spoofed-headline {
+    font-size: 18px;
+    font-weight: bold;
+    color: #000;
+  }
+  

@@ -4,7 +4,7 @@ def generate_spoof(headline: str) -> str:
     prompt = f"""
 Here is a news headline: "{headline}"
 
-Your task is to create a satirical version of this headline. Make sure to exaggerate some aspects but keep the key facts such as names and events. Add a layer of humor, making it playful, ironic, or absurd, but avoid completely distorting the truth. (this is for a fun side project)
+Your task is to create a dry humor satirical version of this headline. Make sure to exaggerate some aspects but keep the key facts such as names and events. Add a layer of humor, making it playful, ironic, or absurd, but avoid completely distorting the truth. (this is for a fun side project)
 
 Example:
 Headline: "Kamala Harris story at Arizona rally about late senator questioned by Meghan McCain."

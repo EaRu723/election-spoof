@@ -2,72 +2,82 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Spoofed Headlines Generator</title>
+    <title>Headline Mixer</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        h1 { text-align: center; }
-        #headlines { display: flex; flex-wrap: wrap; gap: 10px; }
-        .headline { border: 1px solid #ccc; padding: 10px; width: calc(50% - 20px); cursor: pointer; }
-        .headline:hover { background-color: #f0f0f0; }
-        #spoofed-headline { margin-top: 20px; font-size: 1.2em; }
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f0f0f0; }
+        h1 { text-align: center; color: #333; }
+        #headlines-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        .headline-pair { 
+            border: 1px solid #ccc; 
+            padding: 15px; 
+            width: calc(50% - 20px); 
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-radius: 5px;
+        }
+        .original-headline, .spoofed-headline { margin: 10px 0; }
+        .original-headline { font-weight: bold; color: #333; }
+        .spoofed-headline { font-style: italic; color: #666; }
+        .source { font-size: 0.9em; color: #888; text-transform: uppercase; }
+        #loading { text-align: center; font-size: 1.2em; color: #666; }
     </style>
 </head>
 <body>
-    <h1>Spoofed Headlines Generator</h1>
-    <button id="fetch-headlines-button">Fetch Headlines</button>
-    <div id="headlines"></div>
-    <div id="spoofed-headline"></div>
+    <h1>Headline Mixer</h1>
+    <div id="loading">Loading headlines...</div>
+    <div id="headlines-container"></div>
 
     <script>
         const backendUrl = 'http://localhost:8000';
 
-        document.getElementById('fetch-headlines-button').addEventListener('click', fetchHeadlines);
-
         function fetchHeadlines() {
-            document.getElementById('headlines').innerHTML = 'Loading headlines...';
             fetch(`${backendUrl}/fetch-headlines`)
                 .then(response => response.json())
                 .then(data => {
+                    document.getElementById('loading').style.display = 'none';
                     displayHeadlines(data);
                 })
                 .catch(error => {
                     console.error('Error fetching headlines:', error);
-                    document.getElementById('headlines').innerHTML = 'Failed to load headlines.';
+                    document.getElementById('loading').innerHTML = 'Failed to load headlines. Please refresh the page.';
                 });
         }
 
         function displayHeadlines(data) {
-            const headlinesContainer = document.getElementById('headlines');
-            headlinesContainer.innerHTML = '';
-
+            const headlinesContainer = document.getElementById('headlines-container');
             const allHeadlines = [...data.fox_headlines, ...data.cnn_headlines];
 
             allHeadlines.forEach((item, index) => {
                 const headlineDiv = document.createElement('div');
-                headlineDiv.className = 'headline';
-                headlineDiv.dataset.headline = item.headline;
-                headlineDiv.innerHTML = `<strong>${item.source.toUpperCase()}</strong>: ${item.headline}`;
-                headlineDiv.addEventListener('click', () => {
-                    spoofHeadline(item.headline);
-                });
+                headlineDiv.className = 'headline-pair';
+                headlineDiv.innerHTML = `
+                    <div class="source">${item.source}</div>
+                    <div class="original-headline">${item.headline}</div>
+                    <div class="spoofed-headline" id="spoofed-${index}">Generating spoof...</div>
+                `;
                 headlinesContainer.appendChild(headlineDiv);
+
+                // Fetch spoofed headline
+                fetchSpoofedHeadline(item.headline, index);
             });
         }
 
-        function spoofHeadline(headline) {
-            document.getElementById('spoofed-headline').innerHTML = 'Generating spoofed headline...';
+        function fetchSpoofedHeadline(headline, index) {
             const encodedHeadline = encodeURIComponent(headline);
 
             fetch(`${backendUrl}/spoof-headline?headline=${encodedHeadline}`)
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('spoofed-headline').innerHTML = `<strong>Spoofed Headline:</strong> ${data.spoofed_headline}`;
+                    document.getElementById(`spoofed-${index}`).innerHTML = data.spoofed_headline;
                 })
                 .catch(error => {
                     console.error('Error generating spoofed headline:', error);
-                    document.getElementById('spoofed-headline').innerHTML = 'Failed to generate spoofed headline.';
+                    document.getElementById(`spoofed-${index}`).innerHTML = 'Failed to generate spoof.';
                 });
         }
+
+        // Fetch headlines when the page loads
+        window.addEventListener('load', fetchHeadlines);
     </script>
 </body>
 </html>

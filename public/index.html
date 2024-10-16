@@ -1,16 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Headline Mixer App" />
-    <title>Headline Mixer</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-  </body>
-</html>
+<head>
+    <meta charset="UTF-8">
+    <title>Spoofed Headlines Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { text-align: center; }
+        #headlines { display: flex; flex-wrap: wrap; gap: 10px; }
+        .headline { border: 1px solid #ccc; padding: 10px; width: calc(50% - 20px); cursor: pointer; }
+        .headline:hover { background-color: #f0f0f0; }
+        #spoofed-headline { margin-top: 20px; font-size: 1.2em; }
+    </style>
+</head>
+<body>
+    <h1>Spoofed Headlines Generator</h1>
+    <button id="fetch-headlines-button">Fetch Headlines</button>
+    <div id="headlines"></div>
+    <div id="spoofed-headline"></div>
 
+    <script>
+        const backendUrl = 'http://localhost:8000';
+
+        document.getElementById('fetch-headlines-button').addEventListener('click', fetchHeadlines);
+
+        function fetchHeadlines() {
+            document.getElementById('headlines').innerHTML = 'Loading headlines...';
+            fetch(`${backendUrl}/fetch-headlines`)
+                .then(response => response.json())
+                .then(data => {
+                    displayHeadlines(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching headlines:', error);
+                    document.getElementById('headlines').innerHTML = 'Failed to load headlines.';
+                });
+        }
+
+        function displayHeadlines(data) {
+            const headlinesContainer = document.getElementById('headlines');
+            headlinesContainer.innerHTML = '';
+
+            const allHeadlines = [...data.fox_headlines, ...data.cnn_headlines];
+
+            allHeadlines.forEach((item, index) => {
+                const headlineDiv = document.createElement('div');
+                headlineDiv.className = 'headline';
+                headlineDiv.dataset.headline = item.headline;
+                headlineDiv.innerHTML = `<strong>${item.source.toUpperCase()}</strong>: ${item.headline}`;
+                headlineDiv.addEventListener('click', () => {
+                    spoofHeadline(item.headline);
+                });
+                headlinesContainer.appendChild(headlineDiv);
+            });
+        }
+
+        function spoofHeadline(headline) {
+            document.getElementById('spoofed-headline').innerHTML = 'Generating spoofed headline...';
+            const encodedHeadline = encodeURIComponent(headline);
+
+            fetch(`${backendUrl}/spoof-headline?headline=${encodedHeadline}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('spoofed-headline').innerHTML = `<strong>Spoofed Headline:</strong> ${data.spoofed_headline}`;
+                })
+                .catch(error => {
+                    console.error('Error generating spoofed headline:', error);
+                    document.getElementById('spoofed-headline').innerHTML = 'Failed to generate spoofed headline.';
+                });
+        }
+    </script>
+</body>
+</html>

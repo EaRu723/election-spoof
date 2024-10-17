@@ -78,12 +78,40 @@ async def websocket_spoof(websocket: WebSocket):
 
     all_headlines = await fetch_external_headlines()
 
+    # Separate Fox and CNN headlines
+    fox_headlines = [h for h in all_headlines if h["source"].lower() == "fox"]
+    cnn_headlines = [h for h in all_headlines if h["source"].lower() == "cnn"]
+
     spoof_start_time = time.time()
 
-    for headline in all_headlines:
+    # Alternate between Fox and CNN headlines
+    for fox_headline, cnn_headline in zip(fox_headlines, cnn_headlines):
+        for headline in (fox_headline, cnn_headline):
+            try:
+                spoofed_headline = generate_spoof(headline["headline"])
+                logger.info(f"Spoofed headline for {headline['source']} index {headline['index']}: {spoofed_headline}")
+                await websocket.send_json({
+                    "index": headline["index"],
+                    "source": headline["source"],
+                    "spoofed_headline": spoofed_headline
+                })
+            except Exception as e:
+                error_message = f"Failed to generate spoof: {str(e)}"
+                logger.error(f"Error spoofing {headline['source']} headline {headline['index']}: {error_message}")
+                await websocket.send_json({
+                    "index": headline["index"],
+                    "source": headline["source"],
+                    "spoofed_headline": error_message
+                })
+            
+            logger.info(f"Spoofed headline sent for {headline['source']} index {headline['index']}")
+
+    # Handle any remaining headlines if the counts are uneven
+    remaining_headlines = fox_headlines[len(cnn_headlines):] + cnn_headlines[len(fox_headlines):]
+    for headline in remaining_headlines:
         try:
             spoofed_headline = generate_spoof(headline["headline"])
-            logger.info(f"Spoofed headline for index {headline['index']}: {spoofed_headline}")
+            logger.info(f"Spoofed headline for {headline['source']} index {headline['index']}: {spoofed_headline}")
             await websocket.send_json({
                 "index": headline["index"],
                 "source": headline["source"],
@@ -91,14 +119,14 @@ async def websocket_spoof(websocket: WebSocket):
             })
         except Exception as e:
             error_message = f"Failed to generate spoof: {str(e)}"
-            logger.error(f"Error spoofing headline {headline['index']}: {error_message}")
+            logger.error(f"Error spoofing {headline['source']} headline {headline['index']}: {error_message}")
             await websocket.send_json({
                 "index": headline["index"],
                 "source": headline["source"],
                 "spoofed_headline": error_message
             })
         
-        logger.info(f"Spoofed headline sent for index {headline['index']}")
+        logger.info(f"Spoofed headline sent for {headline['source']} index {headline['index']}")
 
     spoof_time = time.time() - spoof_start_time
     logger.info(f"Spoof time: {spoof_time:.2f} seconds")

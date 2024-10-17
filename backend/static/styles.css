@@ -5,10 +5,20 @@ body {
     padding: 20px;
 }
 
+#headlines-wrapper {
+    display: flex;
+    justify-content: space-between;
+}
+
+.column {
+    width: 48%;
+}
+
 .headline {
     margin-bottom: 20px;
-    border: 1px solid #ddd;
     padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
 }
 
 .loading-animation {

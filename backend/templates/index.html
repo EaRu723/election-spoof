@@ -18,16 +18,34 @@
         }
 
         function renderHeadlines(headlines) {
-            const headlineList = document.getElementById("headlines-container");
-            headlineList.innerHTML = headlines.map(headline => `
-                <div class="headline" id="headline-${headline.source}-${headline.index}">
-                    <p><strong>${headline.source.toUpperCase()}:</strong> ${headline.headline}</p>
-                    <div class="spoof-container">
-                        <strong>Spoofed:</strong> <span class="spoofed-text">Loading...</span>
-                        <div class="loading-animation"></div>
-                    </div>
+            const foxContainer = document.getElementById("fox-headlines");
+            const cnnContainer = document.getElementById("cnn-headlines");
+            
+            foxContainer.innerHTML = '';
+            cnnContainer.innerHTML = '';
+
+            headlines.forEach(headline => {
+                const headlineElement = createHeadlineElement(headline);
+                if (headline.source.toLowerCase() === 'fox') {
+                    foxContainer.appendChild(headlineElement);
+                } else if (headline.source.toLowerCase() === 'cnn') {
+                    cnnContainer.appendChild(headlineElement);
+                }
+            });
+        }
+
+        function createHeadlineElement(headline) {
+            const div = document.createElement('div');
+            div.className = 'headline';
+            div.id = `headline-${headline.source}-${headline.index}`;
+            div.innerHTML = `
+                <p><strong>${headline.source.toUpperCase()}:</strong> ${headline.headline}</p>
+                <div class="spoof-container">
+                    <strong>Spoofed:</strong> <span class="spoofed-text">Loading...</span>
+                    <div class="loading-animation"></div>
                 </div>
-            `).join('');
+            `;
+            return div;
         }
 
         function setupWebSocket() {
@@ -58,6 +76,15 @@
 </head>
 <body>
     <h1>The Circus</h1>
-    <div id="headlines-container"></div>
+    <div id="headlines-wrapper">
+        <div id="fox-column" class="column">
+            <h2>Fox News</h2>
+            <div id="fox-headlines"></div>
+        </div>
+        <div id="cnn-column" class="column">
+            <h2>CNN</h2>
+            <div id="cnn-headlines"></div>
+        </div>
+    </div>
 </body>
 </html>

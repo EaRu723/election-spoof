@@ -26,8 +26,6 @@ spoof_time = 0
 
 # Fetch headlines from external APIs
 async def fetch_external_headlines():
-    global fetch_time
-    start_time = time.time()
     async with httpx.AsyncClient(timeout=30.0) as client:
         sources = [
             {"name": "fox", "url": "https://www.foxnews.com/politics"},
@@ -35,10 +33,13 @@ async def fetch_external_headlines():
         ]
         
         async def fetch_source(source):
+            global fetch_time
+            start_time = time.time()
             logger.info(f"Fetching headlines from {source['name']} at {source['url']}")
             params = {"query": "give me every headline on this page", "url": source["url"]}
             response = await client.get("https://lsd.so/knawledge", params=params)
             data = response.json()
+            fetch_time = time.time() - start_time
             headlines = [{"headline": h["headline"], "source": source["name"], "index": i, "spoofed": None} 
                          for i, h in enumerate(data.get("results", []))]
             logger.info(f"Fetched {len(headlines)} headlines from {source['name']}")
@@ -47,10 +48,9 @@ async def fetch_external_headlines():
         try:
             results = await asyncio.gather(*[fetch_source(source) for source in sources])
             all_headlines = [item for sublist in results for item in sublist]
-            fetch_time = time.time() - start_time
             logger.info(f"Fetching headlines took {fetch_time:.2f} seconds")
             logger.info(f"Total headlines fetched: {len(all_headlines)}")
-            return all_headlines, fetch_time
+            return all_headlines
         except Exception as exc:
             logger.error(f"An error occurred while fetching headlines: {exc}")
             raise HTTPException(status_code=500, detail=str(exc))
@@ -63,18 +63,20 @@ async def home(request: Request):
 # Fetch and return headlines from external sources
 @app.get("/fetch-headlines")
 async def fetch_headlines():
+    global fetch_time
     logger.info(f"fetch-headlines called at: {datetime.now().isoformat()}")
-    all_headlines, fetch_time = await fetch_external_headlines()
+    all_headlines = await fetch_external_headlines()
     return JSONResponse(content={"headlines": all_headlines})
 
 # WebSocket for streaming spoofed headlines
 @app.websocket("/ws/spoof-headlines")
 async def websocket_spoof(websocket: WebSocket):
     global spoof_time
+    global fetch_time
     await websocket.accept()
     logger.info(f"WebSocket connection established at {datetime.now().isoformat()}")
 
-    all_headlines, fetch_time = await fetch_external_headlines()
+    all_headlines = await fetch_external_headlines()
     
     # Send fetch time immediately
     await websocket.send_json({

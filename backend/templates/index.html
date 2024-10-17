@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Headline Spoofer</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+    <script>
+        async function fetchHeadlines() {
+            try {
+                const response = await fetch('/fetch-headlines');
+                const data = await response.json();
+                renderHeadlines(data.headlines);
+                setupWebSocket();
+            } catch (error) {
+                console.error('Error fetching headlines:', error);
+            }
+        }
+
+        function renderHeadlines(headlines) {
+            const headlineList = document.getElementById("headlines-container");
+            headlineList.innerHTML = headlines.map(headline => `
+                <div class="headline" id="headline-${headline.source}-${headline.index}">
+                    <p><strong>${headline.source.toUpperCase()}:</strong> ${headline.headline}</p>
+                    <div class="spoof-container">
+                        <strong>Spoofed:</strong> <span class="spoofed-text">Loading...</span>
+                        <div class="loading-animation"></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function setupWebSocket() {
+            const ws = new WebSocket(`ws://${window.location.host}/ws/spoof-headlines`);
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                updateSpoofedHeadline(data.source, data.index, data.spoofed_headline);
+            };
+
+            ['open', 'close', 'error'].forEach(event => {
+                ws[`on${event}`] = console.log.bind(console, `WebSocket ${event}`);
+            });
+        }
+
+        function updateSpoofedHeadline(source, index, spoofedHeadline) {
+            const headlineElement = document.getElementById(`headline-${source}-${index}`);
+            if (headlineElement) {
+                const spoofedTextElement = headlineElement.querySelector('.spoofed-text');
+                const loadingAnimation = headlineElement.querySelector('.loading-animation');
+                spoofedTextElement.textContent = spoofedHeadline;
+                loadingAnimation.style.display = 'none';
+            }
+        }
+
+        window.onload = fetchHeadlines;
+    </script>
+</head>
+<body>
+    <h1>The Circus</h1>
+    <div id="headlines-container"></div>
+</body>
+</html>

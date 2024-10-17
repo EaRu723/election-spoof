@@ -50,12 +50,10 @@ async def fetch_external_headlines():
             fetch_time = time.time() - start_time
             logger.info(f"Fetching headlines took {fetch_time:.2f} seconds")
             logger.info(f"Total headlines fetched: {len(all_headlines)}")
-            return all_headlines
+            return all_headlines, fetch_time
         except Exception as exc:
             logger.error(f"An error occurred while fetching headlines: {exc}")
             raise HTTPException(status_code=500, detail=str(exc))
-
-        return all_headlines
 
 # Home route
 @app.get("/", response_class=HTMLResponse)
@@ -66,7 +64,7 @@ async def home(request: Request):
 @app.get("/fetch-headlines")
 async def fetch_headlines():
     logger.info(f"fetch-headlines called at: {datetime.now().isoformat()}")
-    all_headlines = await fetch_external_headlines()
+    all_headlines, fetch_time = await fetch_external_headlines()
     return JSONResponse(content={"headlines": all_headlines})
 
 # WebSocket for streaming spoofed headlines
@@ -76,7 +74,13 @@ async def websocket_spoof(websocket: WebSocket):
     await websocket.accept()
     logger.info(f"WebSocket connection established at {datetime.now().isoformat()}")
 
-    all_headlines = await fetch_external_headlines()
+    all_headlines, fetch_time = await fetch_external_headlines()
+    
+    # Send fetch time immediately
+    await websocket.send_json({
+        "type": "fetch_time",
+        "fetch_time": fetch_time
+    })
 
     # Separate Fox and CNN headlines
     fox_headlines = [h for h in all_headlines if h["source"].lower() == "fox"]
@@ -130,6 +134,12 @@ async def websocket_spoof(websocket: WebSocket):
 
     spoof_time = time.time() - spoof_start_time
     logger.info(f"Spoof time: {spoof_time:.2f} seconds")
+
+    # Send spoof time after all headlines are processed
+    await websocket.send_json({
+        "type": "spoof_time",
+        "spoof_time": spoof_time
+    })
 
     await websocket.close()
 
